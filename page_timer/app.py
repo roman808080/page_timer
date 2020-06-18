@@ -1,12 +1,15 @@
 from flask import Flask, jsonify, request
 import requests
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+
+SIMULTANEOUS_THREADS = 5
 
 app = Flask(__name__)
 
 
-def calculate_time_for_site(site_name):
+def calculate_load_time(site_name):
     try:
         start = datetime.now()
 
@@ -24,17 +27,25 @@ def show_right_request_format():
     return ("Example of the request: "
             "curl --header \"Content-Type: application/json\" "
             "--request POST "
-            "--data '{\"sites\": [\"http://google.com\", \"http://facebook.com\"]}' "
-            "http://<url>/time-load")
+            "--data '{\"sites\": [\"http://google.com\", "
+                                 "\"http://facebook.com\"]}' "
+            "http://<url>/load-time")
 
 
-@app.route("/time-load", methods=["POST"])
-def time_load():
+@app.route("/load-time", methods=["POST"])
+def load_time():
     sites = request.json.get('sites', [])
     results = []
 
-    for site_name in sites:
-        load_time = calculate_time_for_site(site_name=site_name)
-        results.append({site_name: load_time})
+    with ThreadPoolExecutor(max_workers=SIMULTANEOUS_THREADS) as executor:
+        submitted_sites = []
+
+        for site_name in sites:
+            submitted_site = executor.submit(calculate_load_time, site_name)
+            submitted_sites.append(submitted_site)
+
+        for future in as_completed(submitted_sites):
+            load_time = future.result()
+            results.append({site_name: load_time})
 
     return jsonify({'sites': results})
