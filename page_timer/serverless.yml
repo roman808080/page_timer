@@ -107,6 +107,7 @@ functions:
 resources:
   # Cognito
   - ${file(resources/cognito-user-pool.yml)}
+  - ${file(resources/cognito-identity-pool.yml)}
 #  Resources:
 #    NewResource:
 #      Type: AWS::S3::Bucket
