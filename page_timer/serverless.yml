@@ -61,8 +61,26 @@ functions:
   main:
     handler: wsgi.handler
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
+      - http:
+          method: any
+          path: '/'
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              Fn::GetAtt:
+                - CognitoUserPool
+                - Arn
+      - http:
+          method: any
+          path: '{proxy+}'
+          authorizer:
+            name: MyAuthorizer
+            type: COGNITO_USER_POOLS
+            arn:
+              Fn::GetAtt:
+                - CognitoUserPool
+                - Arn
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
 #    Check the event documentation for details
